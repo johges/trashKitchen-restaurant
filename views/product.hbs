@@ -1,0 +1,27 @@
+<section class= "product-details">
+    <h1>{{title}}</h1>
+
+    {{#if price}}
+        <h2>Price: {{price}}</h2>
+    {{else}}
+        <h2>Price upon request</h2>
+    {{/if}}
+    
+
+    {{!-- <ul>
+        {{#each ingredients}}
+            <li>{{this}}</li>
+        {{/each}}
+    </ul> --}}
+
+      <ul>
+        {{#each ingredients}}
+            <li>{{this.ingredientName}}</li>
+        {{/each}}
+    </ul>
+
+
+    <h3>Recommended drink: {{recommendedDrink}}</h3>
+
+<img src="/images/{{imageFile}}" alt="">
+</section>
