@@ -1,6 +1,10 @@
 const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require('body-parser');
 const hbs = require("hbs");
 const app = express();
+
+const Pizza = require("./models/Pizza.model");
 
 
 app.set("views", __dirname + "/views"); //tells our Express app where to look for our views
@@ -8,19 +12,25 @@ app.set("view engine", "hbs"); //sets HBS as the template engine
 
 hbs.registerPartials(__dirname + "/views/partials"); //tell HBS which directory we use for partials
 
-// Make everything inside of public/ available
-app.use(express.static('public'));
+app.use(express.static('public')); // Make everything inside of public/ available
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 
+// Connect to DB
+mongoose
+    .connect('mongodb://127.0.0.1:27017/pizza-restaurant')
+    .then(x => {
+        console.log(`Connected! Database name: "${x.connections[0].name}"`);
+    })
+    .catch(err => console.error('Error... ', err));
 
-// app.get(path, code)
-
-
+    
 
 // Home Page
 app.get("/", (req, res, next) => {
     res.render("homepage");
-})
+});
 
 
 // Contact Page
@@ -29,106 +39,58 @@ app.get("/contact", (req, res, next) => {
 })
 
 
-// app.get("/pizzas/margarita", (req, res, next) => {
-//     // res.render(path, data);
 
-//     const dataMargarita = {
-//         title: 'Pizza Margarita',
-//         price: 12,
-//         recommendedDrink: 'beer',
-//         imageFile: 'pizza-margarita.jpg',
-//         ingredients: ['mozzarella', 'tomato sauce', 'basilicum'],
-//     };
+app.get("/pizzas", (req, res, next) => {
 
-//     res.render("product", dataMargarita)
-// })
+    let maxPrice = req.query.maxPrice;
+    maxPrice = Number(maxPrice); //convert to a number
 
+    let filter = {};
+    if(maxPrice) {
+        filter = {price: {$lte: maxPrice}}
+    }
 
-// app.get("/pizzas/veggie", (req, res, next) => {
-//     const dataVeggie = {
-//         title: 'Veggie Pizza',
-//         price: 15,
-//         recommendedDrink: 'power smoothie',
-//         imageFile: 'pizza-veggie.jpg',
-//         ingredients: ['cherry tomatoes', 'basilicum', 'olives'],
-//     };
-//     res.render("product", dataVeggie);
-// })
+    Pizza.find(filter)
+        .then( pizzasArr => {
+
+            const data = {
+                listOfPizzas: pizzasArr
+            }
+
+            res.render("product-list", data)
+        })
+        .catch(e => console.log("Error getting list of pizzas from DB", e))
+});
 
 
-// app.get("/pizzas/seafood", (req, res, next) => {
-//     const dataSeafood = {
-//         title: 'Seafood Pizza',
-//         price: 20,
-//         recommendedDrink: 'white wine',
-//         imageFile: 'pizza-seafood.jpg',
-//         ingredients: ['tomato sauce', 'garlic', 'prawn'],
-//     };
-      
-//     res.render("product", dataSeafood);
-// })
 
-app.get("/pizzas/margarita", (req, res, next) => {
-    // res.render(path, data);
+app.get("/pizzas/:pizzaName", (req, res, next) => {
 
-    const dataMargarita = {
-        title: 'Pizza Margarita',
-        price: 12,
-        recommendedDrink: 'beer',
-        imageFile: 'pizza-margarita.jpg',
-        ingredients: [
-            {
-                ingredientName: "mozzarella",
-                calories: 400
-            },
-            {
-                ingredientName: "tomato sauce",
-                calories: 200
-            },
-            {
-                ingredientName: "basilicum",
-                calories: 30
-            },
-          ],
-    };
-
-    res.render("product", dataMargarita)
-})
+    const nameOfThePizza = req.params.pizzaName;
+    
+    Pizza.findOne({title: nameOfThePizza})
+        .then( pizzaDetails => {
+            res.render("product", pizzaDetails);
+        })
+        .catch(e => console.log("Error getting pizza details from DB", e))
+});
 
 
-app.get("/pizzas/veggie", (req, res, next) => {
-    const dataVeggie = {
-        title: 'Veggie Pizza',
-        price: 15,
-        recommendedDrink: 'power smoothie',
-        imageFile: 'pizza-veggie.jpg',
-        ingredients: [
-            {
-                ingredientName: "cherry tomatoes",
-                calories: 80
-            },
-            {
-                ingredientName: "basilicum",
-                calories: 30
-            },
-            {
-                ingredientName: "olives",
-                calories: 300
-            },
-          ],
-    };
-    res.render("product", dataVeggie);
-})
+
+app.post("/login", (req, res, next) => {
 
 
-app.get("/pizzas/seafood", (req, res, next) => {
-    const dataSeafood = {
-        title: 'Seafood Pizza',
-        recommendedDrink: 'white wine',
-        imageFile: 'pizza-seafood.jpg',
-    };
-      
-    res.render("product", dataSeafood);
+    const pwd = req.body.pwd;
+
+
+    if (pwd === "ilovepizza") {
+        res.send("welcome");
+    } else {
+        res.send("sorry, we don't like you");
+    }
+
+    
+    res.send("checking your credentials")
 })
 
 
